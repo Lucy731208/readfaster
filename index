@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>閃電速讀訓練艙 - 逼迫大腦極限的閱讀訓練</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'PingFang TC', 'Microsoft JhengHei', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Confetti 灑花特效 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* 自訂滾動條 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        
+        /* 縮減淡出動畫 */
+        .line-fade-out {
+            animation: fadeOutUp 0.5s forwards ease-in-out;
+        }
+        @keyframes fadeOutUp {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-300 font-sans flex flex-col justify-between">
+
+    <!-- 導覽列 -->
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 text-white p-2 rounded-xl shadow-lg shadow-brand-500/30 animate-pulse">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-xl tracking-wider bg-gradient-to-r from-brand-500 to-pink-500 bg-clip-text text-transparent">
+                        閃電速讀訓練艙
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Lightning Speed Reading Trainer</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="btn-history-toggle" onclick="toggleHistoryModal()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all" title="歷史紀錄">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </button>
+                <button id="theme-toggle" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all" title="切換主題">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+        
+        <!-- 大廳/配置畫面 (Lobby Container) -->
+        <div id="lobby-view" class="space-y-6">
+            <div class="text-center space-y-2">
+                <span class="px-3 py-1 text-xs font-semibold bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-300 rounded-full">
+                    大腦開發挑戰
+                </span>
+                <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">挑戰你的視覺處理速度！</h2>
+                <p class="text-slate-600 dark:text-slate-400 max-w-lg mx-auto text-sm md:text-base">
+                    文章文字將由上至下依序出現，且<span class="text-brand-500 font-bold dark:text-brand-400">每行文字在出現 5 秒後將徹底消失</span>！緊盯螢幕，抓取精髓，文章結束後將有5題閱讀測驗！
+                </p>
+            </div>
+
+            <!-- 自訂配置參數 -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                <h3 class="font-bold text-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders text-brand-500"></i>
+                    <span>速讀難度與參數自訂</span>
+                </h3>
+                
+                <!-- 難度預設推薦 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <button type="button" onclick="setPreset('beginner')" id="preset-beginner" class="preset-btn px-3 py-2 rounded-xl text-sm border border-slate-200 dark:border-slate-800 transition-all font-medium hover:border-brand-500">
+                        🌱 初學體驗 (6s 消失)
+                    </button>
+                    <button type="button" onclick="setPreset('intermediate')" id="preset-intermediate" class="preset-btn px-3 py-2 rounded-xl text-sm border border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 transition-all font-semibold">
+                        ⚡ 標準訓練 (5s 消失)
+                    </button>
+                    <button type="button" onclick="setPreset('advanced')" id="preset-advanced" class="preset-btn px-3 py-2 rounded-xl text-sm border border-slate-200 dark:border-slate-800 transition-all font-medium hover:border-brand-500">
+                        🔥 高階磨練 (4s 消失)
+                    </button>
+                    <button type="button" onclick="setPreset('expert')" id="preset-expert" class="preset-btn px-3 py-2 rounded-xl text-sm border border-slate-200 dark:border-slate-800 transition-all font-medium hover:border-brand-500">
+                        💀 極速狂飆 (3s 消失)
+                    </button>
+                </div>
+
+                <!-- 滑桿控制 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <label class="text-slate-600 dark:text-slate-400">文字存留時間 (秒)</label>
+                            <span id="display-duration" class="font-bold text-brand-500">5.0 秒</span>
+                        </div>
+                        <input type="range" id="slider-duration" min="1.5" max="10" step="0.5" value="5.0" oninput="updateSliders()" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <label class="text-slate-600 dark:text-slate-400">下一行出現間隔 (秒)</label>
+                            <span id="display-interval" class="font-bold text-brand-500">2.5 秒</span>
+                        </div>
+                        <input type="range" id="slider-interval" min="1.0" max="6.0" step="0.5" value="2.5" oninput="updateSliders()" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 選擇文章區 -->
+            <div class="space-y-3">
+                <h3 class="font-bold text-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-book-open text-brand-500"></i>
+                    <span>選擇要挑戰的文章</span>
+                </h3>
+                <div id="article-list" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- 文章卡片由 JS 動態生成 -->
+                </div>
+            </div>
+
+            <!-- 開始按鈕 -->
+            <div class="text-center pt-4">
+                <button onclick="startCountdown()" class="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-brand-500/20 hover:shadow-brand-500/30 transform hover:-translate-y-0.5 transition-all duration-200">
+                    <i class="fa-solid fa-circle-play mr-2"></i>開始速讀挑戰
+                </button>
+            </div>
+        </div>
+
+        <!-- 3-2-1 準備倒數畫面 -->
+        <div id="countdown-view" class="hidden flex flex-col items-center justify-center space-y-6 py-20">
+            <div id="countdown-number" class="text-8xl md:text-9xl font-black text-brand-500 animate-bounce">
+                3
+            </div>
+            <p class="text-lg text-slate-500 dark:text-slate-400 tracking-widest font-bold">保持專注，眼睛盯著螢幕中央...</p>
+        </div>
+
+        <!-- 閱讀主面板 (Reading View) -->
+        <div id="reading-view" class="hidden space-y-6">
+            <!-- 頂部進度與控制區 -->
+            <div class="flex items-center justify-between bg-white dark:bg-slate-900 px-4 py-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <span id="reading-progress-badge" class="px-3 py-1 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full">
+                        正在載入...
+                    </span>
+                    <h3 id="reading-article-title" class="font-bold text-sm md:text-base text-slate-800 dark:text-slate-200 truncate max-w-[150px] md:max-w-xs">
+                        文章標題
+                    </h3>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <!-- 暫停鍵 -->
+                    <button onclick="togglePause()" id="btn-pause" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50 transition-all">
+                        <i id="pause-icon" class="fa-solid fa-pause mr-1"></i> 暫停
+                    </button>
+                    <!-- 放棄挑戰 -->
+                    <button onclick="quitChallenge()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50 transition-all">
+                        <i class="fa-solid fa-circle-xmark mr-1"></i> 放棄
+                    </button>
+                </div>
+            </div>
+
+            <!-- 進度條 -->
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="reading-progress-bar" class="bg-gradient-to-r from-brand-500 to-indigo-600 h-2 rounded-full w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- 速讀文字的核心顯示跑道 -->
+            <div id="reading-track" class="relative bg-white dark:bg-slate-900 rounded-3xl p-8 min-h-[350px] md:min-h-[420px] shadow-inner border border-slate-200 dark:border-slate-800 flex flex-col justify-end overflow-hidden">
+                
+                <!-- 遮罩陰影：加強沈浸感 -->
+                <div class="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white dark:from-slate-900 to-transparent pointer-events-none z-10"></div>
+                
+                <!-- 文字承載容器 -->
+                <div id="text-container" class="space-y-4 md:space-y-6 flex flex-col justify-end flex-grow transition-all duration-300">
+                    <!-- 動態生成的每一行字將會放入此處 -->
+                </div>
+                
+                <!-- 暫停覆蓋層 -->
+                <div id="pause-overlay" class="hidden absolute inset-0 bg-slate-900/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center space-y-4">
+                    <div class="bg-amber-500 text-white p-4 rounded-full shadow-lg shadow-amber-500/20">
+                        <i class="fa-solid fa-circle-pause text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-100">訓練暫停中</h3>
+                    <p class="text-sm text-slate-400">深呼吸一口氣，準備好時點擊繼續</p>
+                    <button onclick="togglePause()" class="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl transition-all shadow-md">
+                        繼續挑戰
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-slate-400 dark:text-slate-500">
+                ⚠️ 警示：緊緊盯住下方新冒出的文字！倒數能量條見底時它就會消失。
+            </p>
+        </div>
+
+        <!-- 5題選擇題測驗面板 (Quiz View) -->
+        <div id="quiz-view" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-brand-500 to-indigo-600 text-white p-6 rounded-2xl shadow-xl space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="px-3 py-1 bg-white/20 text-xs font-bold rounded-full">閱讀終了</span>
+                    <span id="quiz-stepper" class="text-sm font-bold">第 1 / 5 題</span>
+                </div>
+                <h3 class="text-2xl font-black">理解度驗證</h3>
+                <p class="text-slate-200 text-xs md:text-sm">速讀不僅要追求快速，更要確認有沒有讀懂！請回答以下問題。</p>
+            </div>
+
+            <!-- 單題測驗卡片 -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-6">
+                <!-- 問題標題 -->
+                <div class="space-y-2">
+                    <p class="text-xs text-brand-500 font-bold uppercase tracking-wider">Question</p>
+                    <h4 id="quiz-question-text" class="text-lg md:text-xl font-bold leading-relaxed">
+                        這裡會顯示題目文字？
+                    </h4>
+                </div>
+
+                <!-- 選項 -->
+                <div id="quiz-options-container" class="grid grid-cols-1 gap-3">
+                    <!-- 選項按鈕由 JS 動態生成 -->
+                </div>
+            </div>
+
+            <!-- 測驗進度指示器 -->
+            <div class="flex justify-between items-center text-sm text-slate-500">
+                <span>請點選最合適的選項，答題後會自動進入下一題。</span>
+            </div>
+        </div>
+
+        <!-- 挑戰結果畫面 (Results View) -->
+        <div id="results-view" class="hidden space-y-6">
+            <div class="text-center space-y-2">
+                <h2 class="text-3xl font-extrabold tracking-tight">挑戰成果發表 🏆</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">恭喜你完成速讀與理解度大作戰！這是你的綜合指標。</p>
+            </div>
+
+            <!-- 數據看板 grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 理解度 Score -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-2">
+                    <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">閱讀理解度</span>
+                    <div class="relative w-28 h-28 flex items-center justify-center">
+                        <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-200 dark:text-slate-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="result-score-ring" class="text-brand-500 transition-all duration-1000" stroke-dasharray="0, 100" stroke-width="3.2" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <span id="result-score-text" class="text-3xl font-black">0%</span>
+                    </div>
+                    <span id="result-evaluation" class="text-sm font-semibold text-brand-500">評價分析中...</span>
+                </div>
+
+                <!-- 閱讀字速 CPM -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-2">
+                    <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">每分鐘字速 (CPM)</span>
+                    <div class="text-4xl md:text-5xl font-black text-indigo-500 my-4" id="result-cpm-text">
+                        0 <span class="text-sm font-medium text-slate-400">字/分</span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-normal" id="result-cpm-desc">
+                        一般人閱讀速度約為 300~500 字/分鐘。
+                    </p>
+                </div>
+
+                <!-- 總體花費時間與設定 -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-center space-y-3">
+                    <div class="border-b border-slate-100 dark:border-slate-800 pb-2 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">挑戰文章</span>
+                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate max-w-[150px]" id="result-article-name">文章名</span>
+                    </div>
+                    <div class="border-b border-slate-100 dark:border-slate-800 pb-2 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">文章總字數</span>
+                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200" id="result-total-chars">0 字</span>
+                    </div>
+                    <div class="border-b border-slate-100 dark:border-slate-800 pb-2 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">消失倒數設定</span>
+                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200" id="result-seconds-setting">5s</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">閱讀總耗時</span>
+                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200" id="result-time-taken">0s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 錯題解析與覆盤 -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                <h3 class="font-bold text-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-rectangle-list text-brand-500"></i>
+                    <span>理解度題目覆盤解析</span>
+                </h3>
+                <div id="results-review-container" class="space-y-4 divide-y divide-slate-100 dark:divide-slate-800">
+                    <!-- 解析由 JS 生成 -->
+                </div>
+            </div>
+
+            <!-- 控制動作 -->
+            <div class="flex flex-col md:flex-row gap-3 justify-center">
+                <button onclick="restartSameChallenge()" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>再讀一次本篇</span>
+                </button>
+                <button onclick="goBackToLobby()" class="px-6 py-3 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold rounded-xl transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-house"></i>
+                    <span>回到挑戰大廳</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 歷史紀錄模態框 -->
+    <div id="history-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="bg-gradient-to-r from-brand-500 to-indigo-600 px-6 py-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>速讀挑戰歷史紀錄</span>
+                </h3>
+                <button onclick="toggleHistoryModal()" class="text-white/80 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4 max-h-[400px] overflow-y-auto" id="history-list-container">
+                <!-- 歷史清單由 JS 渲染 -->
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <button onclick="clearAllHistory()" class="text-xs text-rose-500 hover:text-rose-600 font-bold">
+                    <i class="fa-solid fa-trash mr-1"></i>清除所有紀錄
+                </button>
+                <button onclick="toggleHistoryModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-bold rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700">
+                    關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁尾 -->
+    <footer class="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 space-y-1">
+            <p>© 2026 閃電速讀訓練艙. 專為高效閱讀與大腦開發打造。</p>
+            <p>💡 速讀心法：不要在心中默讀字音，改用眼睛當作鏡頭直接攝取單字與句子的塊狀意象！</p>
+        </div>
+    </footer>
+
+    <script>
+        /* ----------------------------------------------------
+           1. 全域資料與文章庫定義
+           ---------------------------------------------------- */
+        const ARTICLES = [
+            {
+                id: "ai-future",
+                title: "科技深淵：人工智慧與意識的邊界",
+                difficulty: "中等",
+                category: "科技大未來",
+                icon: "fa-robot",
+                color: "from-blue-500 to-cyan-500",
+                lines: [
+                    "在科技日新月異的今天，人工智慧已經深入我們的生活。",
+                    "從語音助理到自動駕駛，AI 展現了驚人的學習能力。",
+                    "然而，這引發了一個深刻的問題：機器真的能夠擁有自主意識嗎？",
+                    "許多科學家認為，現今的 AI 只是複雜的演算法，",
+                    "它們透過大量的數據進行模擬，並不具備真正的情感與感知。",
+                    "但也有學者抱持不同看法，他們推測當神經網路足夠複雜，",
+                    "也許會自發性地湧現出意識。無論未來的發展方向如何，",
+                    "我們都必須謹慎規範科技，確保 AI 的發展符合人類福祉，",
+                    "而不是成為失控的威脅。"
+                ],
+                questions: [
+                    {
+                        q: "本文主要探討哪一個核心議題？",
+                        options: [
+                            "自動駕駛的安全隱憂",
+                            "AI是否能具備自主意識",
+                            "語音助理在生活中的普及率",
+                            "大數據分析演算法的專利"
+                        ],
+                        ans: 1,
+                        explain: "文章開篇介紹AI應用後，隨即拋出核心問題：『機器真的能夠擁有自主意識嗎？』，整篇文章皆圍繞此進行正反觀點討論。"
+                    },
+                    {
+                        q: "根據多數科學家的看法，現今的 AI 本質上是什麼？",
+                        options: [
+                            "具備人類情感的無機生命體",
+                            "複雜的演算法與數據模擬",
+                            "擁有自發性靈魂的神祕機器",
+                            "已超越人類智慧的完美個體"
+                        ],
+                        ans: 1,
+                        explain: "文中明確指出：『許多科學家認為，現今的 AI 只是複雜的演算法，它們透過大量的數據進行模擬，並不具備真正的情感。』"
+                    },
+                    {
+                        q: "有關 AI 湧現意識的猜測，有學者認為可能在什麼情況下自發產生？",
+                        options: [
+                            "當神經網路的複雜度足夠高時",
+                            "當科學家寫出完美的程式邏輯時",
+                            "當機器人學會人類的情緒表達時",
+                            "當人類徹底停止編寫程式時"
+                        ],
+                        ans: 0,
+                        explain: "文中提及：『他們推測當神經網路足夠複雜，也許會自發性地湧現出意識。』"
+                    },
+                    {
+                        q: "作者認為人類應該抱持何種態度來面對 AI 的未來發展？",
+                        options: [
+                            "全面禁止 AI 的研究以免危害安全",
+                            "毫無保留信任科技，全權交給AI託管",
+                            "謹慎制定規範以確保其符合人類福祉",
+                            "不需任何干預，任由其自由繁衍演化"
+                        ],
+                        ans: 2,
+                        explain: "文中最後一段提及：『我們都必須謹慎規範科技，確保 AI 的發展符合人類福祉。』"
+                    },
+                    {
+                        q: "下列哪一項「不是」本文中提及的 AI 現有應用？",
+                        options: [
+                            "語音助理",
+                            "自動駕駛",
+                            "深海潛艇導航",
+                            "大數據模擬分析"
+                        ],
+                        ans: 2,
+                        explain: "文章開頭提到了『語音助理』、『自動駕駛』與後文的『數據進行模擬』，並未提及『深海潛艇導航』。"
+                    }
+                ]
+            },
+            {
+                id: "atlantis",
+                title: "失落的亞特蘭提斯：歷史還是神話？",
+                difficulty: "簡單",
+                category: "歷史與文明",
+                icon: "fa-anchor",
+                color: "from-teal-500 to-emerald-500",
+                lines: [
+                    "亞特蘭提斯是歷史上著名的謎團。這個傳說最早源自古希臘哲學家柏拉圖。",
+                    "在他的著作《對話錄》中，描述了一個擁有高度文明的帝國。",
+                    "這個島國富庶強大，科技先進，但因人們道德淪喪，",
+                    "激怒了神明，最終在一天一夜中沉入海底。",
+                    "數千年來，探險家與考古學家，紛紛在世界各地尋找它的遺跡。",
+                    "有人認為它位於直布羅陀海峽外，也有人指出它可能在巴哈馬群島。",
+                    "然而，主流歷史學界多數認為，亞特蘭提斯只是柏拉圖虛構的寓言，",
+                    "旨在警示世人不要過度傲慢。無論真相為何，這個美麗的神話，",
+                    "將繼續激發人類對未知的想像力。"
+                ],
+                questions: [
+                    {
+                        q: "「亞特蘭提斯」的傳說最早記載於哪位哲學家的著作中？",
+                        options: [
+                            "蘇格拉底 (Socrates)",
+                            "亞里斯多德 (Aristotle)",
+                            "柏拉圖 (Plato)",
+                            "畢達哥拉斯 (Pythagoras)"
+                        ],
+                        ans: 2,
+                        explain: "文中開篇明確指出：『這個傳說最早源自古希臘哲學家柏拉圖。』"
+                    },
+                    {
+                        q: "根據傳說，亞特蘭提斯最終沉入海底的主因為何？",
+                        options: [
+                            "突如其來的宇宙彗星撞擊",
+                            "島上人民道德淪喪激怒了神明",
+                            "周邊鄰國聯軍合圍的毀滅性核戰",
+                            "地底岩漿庫掏空導致的大規模塌陷"
+                        ],
+                        ans: 1,
+                        explain: "文中指出：『但因人們道德淪喪，激怒了神明，最終在一天一夜中沉入海底。』"
+                    },
+                    {
+                        q: "傳說中亞特蘭提斯沉入海底的速度有多快？",
+                        options: [
+                            "在一小時內瞬間蒸發消失",
+                            "在整整一個星期的地震後沉沒",
+                            "在一天一夜的時間內沉入海底",
+                            "歷經了數十年的緩慢海平面上升"
+                        ],
+                        ans: 2,
+                        explain: "文中句子寫道：『最終在一天一夜中沉入海底。』"
+                    },
+                    {
+                        q: "主流歷史學界目前對於亞特蘭提斯抱持何種共識？",
+                        options: [
+                            "確信其存在並已在巴哈馬群島打撈出古文物",
+                            "認為它是一篇虛構的道德警世寓言",
+                            "證實它是史前冰河時期的外星太空基地",
+                            "多數歷史學家對其不屑一顧，拒絕做任何討論"
+                        ],
+                        ans: 1,
+                        explain: "文中說明：『然而，主流歷史學界多數認為，亞特蘭提斯只是柏拉圖虛構的寓言，旨在警示世人不要過度傲慢。』"
+                    },
+                    {
+                        q: "柏拉圖在對話錄中編撰這個故事的主要宏觀意圖是什麼？",
+                        options: [
+                            "為了推廣古希臘高度發展的航海技術",
+                            "警示人類克制驕奢與過度傲慢的惡行",
+                            "為了賺取當時雅典學院的龐大演講經費",
+                            "純粹為後世奇幻文學奠定宏偉的靈感基石"
+                        ],
+                        ans: 1,
+                        explain: "文中提到：『旨在警示世人不要過度傲慢。』"
+                    }
+                ]
+            },
+            {
+                id: "pulsars",
+                title: "宇宙的燈塔：神祕的脈衝星體",
+                difficulty: "困難",
+                category: "天文物理學",
+                icon: "fa-user-astronaut",
+                color: "from-purple-500 to-pink-500",
+                lines: [
+                    "在浩瀚的宇宙深處，存在著一種被稱為「脈衝星」的天體。",
+                    "它們是質量巨大的恆星死亡後，經過超新星爆炸所留下的核心。",
+                    "脈衝星的密度極高，一個茶匙大小的物質就重達數億噸。",
+                    "它們擁有極其強大的磁場，並且以難以置信的速度自轉。",
+                    "隨著自轉，脈衝星會從兩極，射出兩道強烈的電磁輻射束。",
+                    "當這些輻射束掃過地球時，科學家就能觀測到週期性的訊號，",
+                    "就像海上指引船隻的燈塔一樣。脈衝星的發現不僅證實了中子星的存在，",
+                    "還能作為宇宙中的天然時鐘，幫助人類精確探測引力波，",
+                    "以及研究極端物理環境下的奧秘。"
+                ],
+                questions: [
+                    {
+                        q: "脈衝星是恆星死亡後經歷了什麼事件所殘留下的星體核心？",
+                        options: [
+                            "彗星與行星的大規模連鎖碰撞",
+                            "超新星爆炸後的極致核心遺跡",
+                            "星際黑洞吞噬多餘質量後的反衝",
+                            "星雲冷縮造成的超高溫恆星凝結"
+                        ],
+                        ans: 1,
+                        explain: "文中提到：『它們是質量巨大的恆星死亡後，經過超新星爆炸所留下的核心。』"
+                    },
+                    {
+                        q: "文章中使用了什麼比喻來具體形容脈衝星的「高密度」特性？",
+                        options: [
+                            "一整個茶匙的脈衝星物質重達數億噸",
+                            "一粒沙子的質量便相當於整個地球",
+                            "其硬度足以彈開所有的核爆與小行星",
+                            "它所散發的引力連光線都無法逃逸"
+                        ],
+                        ans: 0,
+                        explain: "文中明確表示：『脈衝星的密度極高，一個茶匙大小的物質就重達數億噸。』"
+                    },
+                    {
+                        q: "脈衝星射出強烈電磁輻射束的具體發射位置在哪裡？",
+                        options: [
+                            "其自轉軸的赤道環帶上",
+                            "隨機從星體表面的火山口噴發",
+                            "星體的北極與南極兩極部位",
+                            "僅從星核內部透過重力波向外折射"
+                        ],
+                        ans: 2,
+                        explain: "文中明確寫道：『隨著自轉，脈衝星會從兩極，射出兩道強烈的電磁輻射束。』"
+                    },
+                    {
+                        q: "為什麼科學家會將其美譽為「宇宙的燈塔」？",
+                        options: [
+                            "因為它們在夜空中綻放出明亮絢麗的可見光",
+                            "因為自轉使輻射束定時掃過地球，產生精密週期訊號",
+                            "因為它們是由高階外星文明擺設的太空指引燈",
+                            "因為它們釋放出的重力能牽引所有路過的探測器"
+                        ],
+                        ans: 1,
+                        explain: "文中說明：『當這些輻射束掃過地球時，科學家就能觀測到週期性的訊號，就像海上指引船隻的燈塔一樣。』"
+                    },
+                    {
+                        q: "下列哪一項「不屬於」脈衝星在天文物理研究上的重大科研價值？",
+                        options: [
+                            "證實了中子星在物理學中的真實存在",
+                            "能當作全宇宙最精準的『天然時鐘』",
+                            "能協助探測微弱的宇宙重力波(引力波)",
+                            "能夠用來精準預報地球上的極端氣候變化"
+                        ],
+                        ans: 3,
+                        explain: "最後一段提及它可用於證實中子星存在、作為宇宙時鐘、探測引力波。並無預報地球氣候的功能。"
+                    }
+                ]
+            }
+        ];
+
+        /* ----------------------------------------------------
+           2. STREAMING_CHUNK: 應用程式狀態管理
+           ---------------------------------------------------- */
+        let state = {
+            currentArticle: ARTICLES[0],
+            lineDuration: 5.0,     // 預設每行字顯示 5 秒
+            spawnInterval: 2.5,    // 預設每隔 2.5 秒產生新的一行
+            activeLines: [],       // 正在軌道上顯示的文字物件
+            currentLineIndex: 0,   // 目前準備產生的文字行索引
+            isPaused: false,
+            timerId: null,         // 產生文字行的主定時器
+            elapsedTime: 0,        // 閱讀花費總秒數
+            elapsedTimerId: null,  // 統計總時長的定時器
+            quizCurrentIndex: 0,   // 當前回答到第幾題
+            userAnswers: [],       // 儲存使用者的答案
+            readingStartTime: 0
+        };
+
+        /* ----------------------------------------------------
+           3. 網頁初始化載入
+           ---------------------------------------------------- */
+        window.onload = function() {
+            // 初始化深淺色主題
+            if (localStorage.getItem('theme') === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-sun';
+            } else {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-moon';
+            }
+
+            renderArticles();
+            updateSliders();
+            loadHistory();
+        };
+
+        // 切換主題色
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        }
+
+        /* ----------------------------------------------------
+           4. STREAMING_CHUNK: 大廳與參數控制模組
+           ---------------------------------------------------- */
+        // 渲染文章卡片
+        function renderArticles() {
+            const container = document.getElementById('article-list');
+            container.innerHTML = '';
+
+            ARTICLES.forEach(art => {
+                const isSelected = state.currentArticle.id === art.id;
+                const totalChars = art.lines.reduce((sum, line) => sum + line.length, 0);
+                
+                const card = document.createElement('div');
+                card.id = `card-${art.id}`;
+                card.className = `cursor-pointer p-5 rounded-2xl border-2 transition-all relative overflow-hidden group bg-white dark:bg-slate-900 ${
+                    isSelected 
+                    ? 'border-brand-500 ring-2 ring-brand-500/20' 
+                    : 'border-slate-200 dark:border-slate-800 hover:border-brand-500'
+                }`;
+                card.onclick = () => selectArticle(art.id);
+
+                card.innerHTML = `
+                    <div class="absolute right-2 bottom-2 text-slate-100 dark:text-slate-800/40 text-6xl font-black group-hover:scale-110 transition-transform pointer-events-none">
+                        <i class="fa-solid ${art.icon}"></i>
+                    </div>
+                    <div class="relative z-10 space-y-3">
+                        <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-md bg-gradient-to-r ${art.color} text-white shadow-sm">
+                            ${art.category}
+                        </span>
+                        <div class="space-y-1">
+                            <h4 class="font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-brand-500 transition-colors">
+                                ${art.title}
+                            </h4>
+                            <div class="flex items-center space-x-3 text-xs text-slate-500">
+                                <span><i class="fa-solid fa-align-left mr-1"></i>${totalChars} 字</span>
+                                <span>•</span>
+                                <span><i class="fa-solid fa-signal mr-1"></i>${art.difficulty}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 選擇文章
+        function selectArticle(id) {
+            const article = ARTICLES.find(a => a.id === id);
+            if (article) {
+                state.currentArticle = article;
+                renderArticles();
+            }
+        }
+
+        // 滑桿與預設值同步
+        function updateSliders() {
+            state.lineDuration = parseFloat(document.getElementById('slider-duration').value);
+            state.spawnInterval = parseFloat(document.getElementById('slider-interval').value);
+            
+            document.getElementById('display-duration').innerText = `${state.lineDuration.toFixed(1)} 秒`;
+            document.getElementById('display-interval').innerText = `${state.spawnInterval.toFixed(1)} 秒`;
+            
+            // 取消所有難度預設按鈕的高亮
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.className = "preset-btn px-3 py-2 rounded-xl text-sm border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 transition-all font-medium hover:border-brand-500";
+            });
+        }
+
+        // 難度預設快速按鈕
+        function setPreset(level) {
+            const sliderDuration = document.getElementById('slider-duration');
+            const sliderInterval = document.getElementById('slider-interval');
+
+            if (level === 'beginner') {
+                sliderDuration.value = 6.0;
+                sliderInterval.value = 3.5;
+            } else if (level === 'intermediate') {
+                sliderDuration.value = 5.0;
+                sliderInterval.value = 2.5;
+            } else if (level === 'advanced') {
+                sliderDuration.value = 4.0;
+                sliderInterval.value = 2.0;
+            } else if (level === 'expert') {
+                sliderDuration.value = 3.0;
+                sliderInterval.value = 1.5;
+            }
+            
+            updateSliders();
+
+            // 為被點選的按鈕套用高亮
+            const activeBtn = document.getElementById(`preset-${level}`);
+            if (activeBtn) {
+                activeBtn.className = "preset-btn px-3 py-2 rounded-xl text-sm border border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-semibold transition-all";
+            }
+        }
+
+        /* ----------------------------------------------------
+           5. STREAMING_CHUNK: 倒數與速讀引擎核心邏輯
+           ---------------------------------------------------- */
+        // 開始倒數計時 3, 2, 1
+        function startCountdown() {
+            document.getElementById('lobby-view').classList.add('hidden');
+            document.getElementById('countdown-view').classList.remove('hidden');
+
+            let count = 3;
+            const numEl = document.getElementById('countdown-number');
+            numEl.innerText = count;
+            
+            const countInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    numEl.innerText = count;
+                    numEl.classList.remove('scale-100');
+                    numEl.classList.add('scale-125');
+                    setTimeout(() => numEl.classList.remove('scale-125'), 100);
+                } else {
+                    clearInterval(countInterval);
+                    document.getElementById('countdown-view').classList.add('hidden');
+                    initiateReadingChallenge();
+                }
+            }, 1000);
+        }
+
+        // 啟動速讀主邏輯
+        function initiateReadingChallenge() {
+            document.getElementById('reading-view').classList.remove('hidden');
+            
+            // 初始化狀態
+            state.activeLines = [];
+            state.currentLineIndex = 0;
+            state.isPaused = false;
+            state.elapsedTime = 0;
+            state.userAnswers = [];
+            
+            document.getElementById('text-container').innerHTML = '';
+            document.getElementById('pause-overlay').classList.add('hidden');
+            document.getElementById('reading-article-title').innerText = state.currentArticle.title;
+            
+            updateReadingProgressBadge();
+
+            // 啟動閱讀計時器 (計算實際耗時)
+            state.readingStartTime = Date.now();
+            state.elapsedTimerId = setInterval(() => {
+                if (!state.isPaused) {
+                    state.elapsedTime += 0.1;
+                }
+            }, 100);
+
+            // 產生第一行文字
+            spawnNextLine();
+
+            // 設定行生成定時器
+            scheduleNextSpawn();
+        }
+
+        // 動態排程下一次文字出現
+        function scheduleNextSpawn() {
+            if (state.timerId) clearTimeout(state.timerId);
+            
+            state.timerId = setTimeout(() => {
+                if (!state.isPaused) {
+                    spawnNextLine();
+                }
+            }, state.spawnInterval * 1000);
+        }
+
+        // 生成下一行字並在5秒後移除
+        function spawnNextLine() {
+            const lines = state.currentArticle.lines;
+            
+            if (state.currentLineIndex >= lines.length) {
+                // 文章所有行皆已生成，等待場上最後一行消失後進入測驗
+                checkReadingFinished();
+                return;
+            }
+
+            const currentText = lines[state.currentLineIndex];
+            const lineId = 'line-' + Date.now() + '-' + state.currentLineIndex;
+            state.currentLineIndex++;
+            
+            updateReadingProgressBadge();
+
+            // 1. 創建行包裝容器 DOM
+            const lineDiv = document.createElement('div');
+            lineDiv.id = lineId;
+            // 初始透明且下移，用作滑入效果
+            lineDiv.className = "opacity-0 translate-y-4 transition-all duration-500 ease-out flex flex-col items-center justify-center space-y-1.5 py-2";
+            
+            // 2. 內部文字與能量指示條
+            lineDiv.innerHTML = `
+                <p class="text-xl md:text-2xl font-bold tracking-wide text-slate-800 dark:text-slate-100 drop-shadow-sm select-none text-center px-4 leading-relaxed">
+                    ${currentText}
+                </p>
+                <div class="w-32 bg-slate-100 dark:bg-slate-800/80 h-[4px] rounded-full overflow-hidden">
+                    <div id="bar-${lineId}" class="bg-gradient-to-r from-brand-500 to-indigo-500 h-full w-full transition-all linear"></div>
+                </div>
+            `;
+
+            // 3. 加入容器中
+            const track = document.getElementById('text-container');
+            track.appendChild(lineDiv);
+
+            // 4. 強制瀏覽器 Reflow 以觸發滑入淡入動畫
+            setTimeout(() => {
+                lineDiv.classList.remove('opacity-0', 'translate-y-4');
+                lineDiv.classList.add('opacity-100', 'translate-y-0');
+            }, 50);
+
+            // 5. 控制底部的倒數能量條
+            const shrinkBar = document.getElementById(`bar-${lineId}`);
+            // 設定 CSS transition 時間使能量條緩緩縮為 0
+            shrinkBar.style.transitionDuration = `${state.lineDuration}s`;
+            setTimeout(() => {
+                shrinkBar.style.width = '0%';
+            }, 100);
+
+            // 6. 設定消失定時器 (生命週期結束)
+            const vanishTimer = setTimeout(() => {
+                // 開始淡出向上飛走
+                lineDiv.classList.add('line-fade-out');
+                
+                // 完全淡出後徹底從 DOM 中移除並從追蹤名單中洗掉
+                setTimeout(() => {
+                    lineDiv.remove();
+                    state.activeLines = state.activeLines.filter(item => item.id !== lineId);
+                    
+                    // 如果文章發送完畢且場上也沒有殘留文字，即刻跳轉
+                    if (state.currentLineIndex >= lines.length && state.activeLines.length === 0) {
+                        finishReadingAndStartQuiz();
+                    }
+                }, 500);
+
+            }, state.lineDuration * 1000);
+
+            // 紀錄該行狀態
+            state.activeLines.push({
+                id: lineId,
+                vanishTimer: vanishTimer,
+                spawnedTime: Date.now(),
+                divRef: lineDiv
+            });
+
+            // 繼續排程下一行
+            scheduleNextSpawn();
+        }
+
+        // 更新頂部小進度條
+        function updateReadingProgressBadge() {
+            const total = state.currentArticle.lines.length;
+            const current = state.currentLineIndex;
+            document.getElementById('reading-progress-badge').innerText = `行數 ${current} / ${total}`;
+            
+            const percent = (current / total) * 100;
+            document.getElementById('reading-progress-bar').style.width = `${percent}%`;
+        }
+
+        // 檢查是否閱讀結束 (場上所有行都消失)
+        function checkReadingFinished() {
+            if (state.activeLines.length === 0) {
+                finishReadingAndStartQuiz();
+            }
+        }
+
+        /* ----------------------------------------------------
+           6. STREAMING_CHUNK: 暫停與放棄模組
+           ---------------------------------------------------- */
+        // 暫停/繼續挑戰
+        function togglePause() {
+            if (state.isPaused) {
+                // 恢復挑戰
+                state.isPaused = false;
+                document.getElementById('pause-overlay').classList.add('hidden');
+                document.getElementById('pause-icon').className = 'fa-solid fa-pause mr-1';
+                document.getElementById('btn-pause').innerText = '暫停';
+                document.getElementById('btn-pause').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50 transition-all";
+                
+                // 清理舊的，直接從目前行號重新啟動排程
+                if (state.timerId) clearTimeout(state.timerId);
+                scheduleNextSpawn();
+            } else {
+                // 暫停挑戰
+                state.isPaused = true;
+                document.getElementById('pause-overlay').classList.remove('hidden');
+                document.getElementById('pause-icon').className = 'fa-solid fa-play mr-1';
+                document.getElementById('btn-pause').innerText = '繼續';
+                document.getElementById('btn-pause').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition-all";
+                
+                // 暫停時清除所有的生存定時器，場上文字全數清空，避免作弊或亂套
+                if (state.timerId) clearTimeout(state.timerId);
+                state.activeLines.forEach(line => {
+                    clearTimeout(line.vanishTimer);
+                    line.divRef.remove();
+                });
+                state.activeLines = [];
+                
+                // 如果暫停了，為求公平，恢復時當前行往前退一行以便重新讀取
+                if (state.currentLineIndex > 0) {
+                    state.currentLineIndex--;
+                }
+            }
+        }
+
+        // 放棄挑戰
+        function quitChallenge() {
+            if (confirm("確定要放棄這次閱讀訓練嗎？")) {
+                cleanupTimers();
+                document.getElementById('reading-view').classList.add('hidden');
+                document.getElementById('lobby-view').classList.remove('hidden');
+            }
+        }
+
+        // 清除所有運作中的計時器
+        function cleanupTimers() {
+            if (state.timerId) clearTimeout(state.timerId);
+            if (state.elapsedTimerId) clearInterval(state.elapsedTimerId);
+            state.activeLines.forEach(line => clearTimeout(line.vanishTimer));
+            state.activeLines = [];
+        }
+
+        /* ----------------------------------------------------
+           7. STREAMING_CHUNK: 測驗作答模組
+           ---------------------------------------------------- */
+        // 文章播放完畢，跳轉到測驗
+        function finishReadingAndStartQuiz() {
+            cleanupTimers();
+            document.getElementById('reading-view').classList.add('hidden');
+            document.getElementById('quiz-view').classList.remove('hidden');
+            
+            state.quizCurrentIndex = 0;
+            state.userAnswers = [];
+            
+            showQuizQuestion();
+        }
+
+        // 渲染測驗題目
+        function showQuizQuestion() {
+            const art = state.currentArticle;
+            const qIndex = state.quizCurrentIndex;
+            const qData = art.questions[qIndex];
+            
+            document.getElementById('quiz-stepper').innerText = `第 ${qIndex + 1} / ${art.questions.length} 題`;
+            document.getElementById('quiz-question-text').innerText = qData.q;
+            
+            const optionsBox = document.getElementById('quiz-options-container');
+            optionsBox.innerHTML = '';
+
+            const alphabet = ['A', 'B', 'C', 'D'];
+            
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-brand-500 bg-slate-50 dark:bg-slate-900/50 hover:bg-brand-50/50 dark:hover:bg-brand-950/20 flex items-center space-x-4 transition-all group";
+                btn.onclick = () => selectQuizAnswer(idx);
+                
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-all text-sm">
+                        ${alphabet[idx]}
+                    </span>
+                    <span class="font-semibold text-slate-700 dark:text-slate-200 text-sm md:text-base">${opt}</span>
+                `;
+                optionsBox.appendChild(btn);
+            });
+        }
+
+        // 作答處理
+        function selectQuizAnswer(selectedIndex) {
+            state.userAnswers.push(selectedIndex);
+            
+            state.quizCurrentIndex++;
+            if (state.quizCurrentIndex < state.currentArticle.questions.length) {
+                // 還有題目，進入下一題
+                showQuizQuestion();
+            } else {
+                // 答題完成，計算結果
+                compileResults();
+            }
+        }
+
+        /* ----------------------------------------------------
+           8. STREAMING_CHUNK: 成果計算與數據分析
+           ---------------------------------------------------- */
+        function compileResults() {
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('results-view').classList.remove('hidden');
+
+            const art = state.currentArticle;
+            const totalQuestions = art.questions.length;
+            let correctCount = 0;
+
+            art.questions.forEach((q, idx) => {
+                if (state.userAnswers[idx] === q.ans) {
+                    correctCount++;
+                }
+            });
+
+            const scorePercent = Math.round((correctCount / totalQuestions) * 100);
+
+            // 計算字數
+            const totalChars = art.lines.reduce((sum, line) => sum + line.length, 0);
+            
+            // 計算 CPM = (總字數 / 閱讀時間) * 60
+            const readingDurationMin = state.elapsedTime / 60;
+            const cpm = Math.round(totalChars / readingDurationMin);
+
+            // 1. 動態繪製圓形環狀進度條
+            const scoreRing = document.getElementById('result-score-ring');
+            scoreRing.style.strokeDasharray = `${scorePercent}, 100`;
+            document.getElementById('result-score-text').innerText = `${scorePercent}%`;
+
+            // 2. 理解度等級評價
+            let evaluation = "";
+            let evalColor = "text-brand-500";
+            if (scorePercent === 100) {
+                evaluation = "👑 完美理解！過目不忘";
+                evalColor = "text-emerald-500";
+                // 撒花慶祝！
+                triggerConfetti();
+            } else if (scorePercent >= 80) {
+                evaluation = "🌟 優秀！掌握了核心細節";
+                evalColor = "text-teal-500";
+            } else if (scorePercent >= 60) {
+                evaluation = "👍 及格！閱讀節奏感不錯";
+                evalColor = "text-amber-500";
+            } else {
+                evaluation = "💔 需再加油！只求快而忽略了吸收";
+                evalColor = "text-rose-500";
+            }
+            const evalEl = document.getElementById('result-evaluation');
+            evalEl.innerText = evaluation;
+            evalEl.className = `text-sm font-bold ${evalColor} mt-2`;
+
+            // 3. 字速表現文字分析
+            document.getElementById('result-cpm-text').innerHTML = `${cpm} <span class="text-sm font-medium text-slate-400">字/分</span>`;
+            let cpmDesc = "";
+            if (cpm >= 1000) {
+                cpmDesc = "🚀 驚人的大師級視讀！你的大腦如同相機快門，直接成塊吸收資訊。";
+            } else if (cpm >= 600) {
+                cpmDesc = "⚡ 極速狂飆！已經超越八成以上常人的閱讀極限速度。";
+            } else if (cpm >= 400) {
+                cpmDesc = "📈 優秀速讀！正在有效擺脫心中默讀，視覺處理效率大幅提昇。";
+            } else {
+                cpmDesc = "🌱 初階起步！可以嘗試縮減每行字消失秒數，強迫眼球擴大視幅。";
+            }
+            document.getElementById('result-cpm-desc').innerText = cpmDesc;
+
+            // 4. 其他基礎數據填寫
+            document.getElementById('result-article-name').innerText = art.title;
+            document.getElementById('result-total-chars').innerText = `${totalChars} 字`;
+            document.getElementById('result-seconds-setting').innerText = `${state.lineDuration.toFixed(1)} 秒`;
+            document.getElementById('result-time-taken').innerText = `${state.elapsedTime.toFixed(1)} 秒`;
+
+            // 5. 生成題回復盤解析 DOM
+            const reviewBox = document.getElementById('results-review-container');
+            reviewBox.innerHTML = '';
+            
+            const alphabet = ['A', 'B', 'C', 'D'];
+            art.questions.forEach((q, idx) => {
+                const userChoice = state.userAnswers[idx];
+                const isCorrect = userChoice === q.ans;
+                
+                const qDiv = document.createElement('div');
+                qDiv.className = "pt-4 space-y-2";
+                qDiv.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold text-slate-400">第 ${idx + 1} 題</span>
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100">${q.q}</h4>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center space-x-1 ${
+                            isCorrect 
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' 
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                        }">
+                            <i class="fa-solid ${isCorrect ? 'fa-circle-check' : 'fa-circle-xmark'} mr-1"></i>
+                            <span>${isCorrect ? '答對' : '答錯'}</span>
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+                        <p>你的答案：<span class="font-bold ${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">(${alphabet[userChoice]}) ${q.options[userChoice]}</span></p>
+                        <p>正確答案：<span class="font-bold text-emerald-500">(${alphabet[q.ans]}) ${q.options[q.ans]}</span></p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-lg text-xs leading-relaxed border-l-2 border-brand-500 text-slate-500">
+                        <strong>解析：</strong>${q.explain}
+                    </div>
+                `;
+                reviewBox.appendChild(qDiv);
+            });
+
+            // 6. 保存歷史數據
+            saveHistory(art.title, scorePercent, cpm, state.lineDuration);
+        }
+
+        // 灑花祝賀
+        function triggerConfetti() {
+            confetti({
+                particleCount: 120,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#8b5cf6', '#3b82f6', '#10b981', '#ec4899']
+            });
+        }
+
+        /* ----------------------------------------------------
+           9. STREAMING_CHUNK: 歷史紀錄存儲模組 (LocalStorage)
+           ---------------------------------------------------- */
+        function saveHistory(articleTitle, score, cpm, seconds) {
+            const records = JSON.parse(localStorage.getItem('speed_reading_history') || '[]');
+            const newRecord = {
+                id: Date.now(),
+                title: articleTitle,
+                score: score,
+                cpm: cpm,
+                seconds: seconds,
+                date: new Date().toLocaleDateString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+            };
+            records.unshift(newRecord); // 最新紀錄排在最前
+            localStorage.setItem('speed_reading_history', JSON.stringify(records));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const records = JSON.parse(localStorage.getItem('speed_reading_history') || '[]');
+            const container = document.getElementById('history-list-container');
+            
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 space-y-2">
+                        <i class="fa-solid fa-folder-open text-slate-300 dark:text-slate-700 text-4xl"></i>
+                        <p class="text-sm text-slate-500">目前還沒有任何挑戰紀錄喔，快開始第一場吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            records.forEach(r => {
+                const item = document.createElement('div');
+                item.className = "p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between space-x-4";
+                item.innerHTML = `
+                    <div class="space-y-1 truncate flex-grow">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${r.title}</h4>
+                        <div class="flex items-center space-x-3 text-[11px] text-slate-500">
+                            <span><i class="fa-solid fa-clock mr-1"></i>${r.date}</span>
+                            <span>•</span>
+                            <span><i class="fa-solid fa-bolt mr-1"></i>${r.seconds}s 設定</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 shrink-0">
+                        <div class="text-right">
+                            <span class="block text-xs text-slate-400">理解度</span>
+                            <span class="text-sm font-black ${r.score >= 60 ? 'text-teal-500' : 'text-rose-500'}">${r.score}%</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-xs text-slate-400">速讀率</span>
+                            <span class="text-sm font-black text-brand-500">${r.cpm} <span class="text-[10px] font-normal">字/分</span></span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function clearAllHistory() {
+            if (confirm("確定要清除所有的學習成長軌跡嗎？清除後將無法復原。")) {
+                localStorage.removeItem('speed_reading_history');
+                loadHistory();
+            }
+        }
+
+        function toggleHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        /* ----------------------------------------------------
+           10. 面板切換與重啟控制
+           ---------------------------------------------------- */
+        // 重試同一個挑戰
+        function restartSameChallenge() {
+            document.getElementById('results-view').classList.add('hidden');
+            startCountdown();
+        }
+
+        // 回到大廳
+        function goBackToLobby() {
+            document.getElementById('results-view').classList.add('hidden');
+            document.getElementById('lobby-view').classList.remove('hidden');
+            renderArticles();
+        }
+    </script>
+</body>
+</html>
